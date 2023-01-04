@@ -1,48 +1,72 @@
-package converter // Do not delete this line
+package converter
 
-fun decimalTo(value: Int, base: Int): String {
+import java.math.BigInteger
+
+enum class STATE {
+    MENU, CONVERT
+}
+
+fun decimalTo(value: BigInteger, base: Int): String {
     var str = ""
     var number = value
-    while (number > 0) {
-        val remainder = number % base
-        if (remainder < 10) str += remainder else str += 'a' + (remainder - 10)
-        number /= base
+    while (number > BigInteger.ZERO) {
+        val remainder = number % base.toBigInteger()
+        if (remainder < BigInteger.TEN) str += remainder else str += 'a' + (remainder.toInt() - 10)
+        number /= base.toBigInteger()
     }
     return str.reversed()
 }
 
-fun toDecimal(value: String, base: Int): Int {
-    var result = 0
-    value.forEach { result = result * base + if (it >= 'a') it - 'a' + 10 else it - '0' }
+fun toDecimal(value: String, base: Int): BigInteger {
+    var result = 0.toBigInteger()
+    value.forEach {
+        result = result * base.toBigInteger() + (if (it >= 'a') it - 'a' + 10 else it - '0').toBigInteger()
+    }
     return result
 }
 
+fun getMessage(state: STATE, sourceBase: Int, targetBase: Int) {
+    when (state) {
+        STATE.MENU -> println("Enter two numbers in format: {source base} {target base} (To quit type /exit)")
+        STATE.CONVERT -> println(
+            "Enter number in base $sourceBase to convert " +
+                    "to base $targetBase (To go back type /back)"
+        )
+    }
+}
+
+
 fun main() {
+    var state = STATE.MENU
+    var sourceBase = 0
+    var targetBase = 0
+
     while (true) {
-        println("Do you want to convert /from decimal or /to decimal? (To quit type /exit) > /to")
-        when (readln()) {
-            "/from" -> {
-                println("Enter number in decimal system:")
-                val number = readln().toInt()
-                println("Enter target base: ")
-                println(
-                    "Conversion result: " +
-                            decimalTo(number, readln().toInt())
-                )
+        getMessage(state, sourceBase, targetBase)
+        val action = readln()
+        when (state) {
+            STATE.MENU -> {
+                if (action == "/exit") break
+                val list = action.split(" ")
+                sourceBase = list[0].toInt()
+                targetBase = list[1].toInt()
+                state = STATE.CONVERT
             }
 
-            "/to" -> {
-                println("Enter source number:")
-                val number = readln()
-                println("Enter source base: ")
-                println(
-                    "Conversion to decimal result: " +
-                            toDecimal(number, readln().toInt())
-                )
-            }
+            STATE.CONVERT -> {
+                if (action == "/back") {
+                    state = STATE.MENU
+                    continue
+                }
 
-            "/exit" -> break
+                if (sourceBase == 10) {
+                    println("Conversion result: " + decimalTo(action.toBigInteger(), targetBase))
+                } else if (targetBase != 10) {
+                    println("Conversion result: " + decimalTo(toDecimal(action, sourceBase), targetBase))
+                } else {
+                    println("Conversion result: " + toDecimal(action, sourceBase))
+                }
+            }
         }
     }
-
 }
